@@ -1,20 +1,47 @@
 import React from "react";
+import "../styles/Form.css";
 
 class Form extends React.Component {
 	constructor(props) {
 		super(props);
-		this.state = { value: "" };
+		this.state = { yoda: "", value: "", translate: "", translated: "" };
 	}
-	// try {
-	// 	async fetch("http://localhost:3000").then(console.log(response));
-	// 	};
-	// } catch (error) {
-	// 	console.log(error);
+
+	// async componentDidMount() {
+	// 	this.handleSubmit();
 	// }
 
-	handleSubmit = (event) => {
+	handleSubmit = async (event) => {
 		event.preventDefault();
-		alert("Submitted: " + this.state.value);
+		if (this.state?.value === "") {
+			return;
+		}
+		try {
+			const response = await fetch(
+				`https://api.funtranslations.com/translate/yoda.json?text=${this.state.value}`,
+				{
+					method: "GET",
+					keepalive: false,
+				}
+			);
+			const data = await response.json();
+
+			if (typeof data.error !== "undefined") {
+				throw data;
+			} else {
+				this.setState({ data: data, value: "" });
+			}
+		} catch (error) {
+			this.setState({
+				data: {
+					contents: {
+						translated: error.error.message,
+						translation: "The Server",
+					},
+					error: error,
+				},
+			});
+		}
 	};
 
 	tellYoda = (event) => {
@@ -22,18 +49,35 @@ class Form extends React.Component {
 	};
 
 	render() {
+		const data = this.state?.data;
 		return (
-			<form onSubmit={this.handleSubmit}>
-				{/* {this.state.isToggleOn ? 'ON' : 'OFF'} */}
-				<input
-					onChange={this.tellYoda}
-					type="text"
-					name="sentance"
-					id="sentance"
-					value={this.state.value}
-					placeholder="Speak, what say you would?"
-				/>
-			</form>
+			<>
+				{data && (
+					<div>
+						<blockquote
+							className={
+								data.contents.translation === "yoda" ? "result" : "error"
+							}
+							cite={data.contents.translated}
+						>
+							{data.contents.translated}
+							<br />
+							<cite>- {data.contents.translation}</cite>
+						</blockquote>
+					</div>
+				)}
+				<form onSubmit={this.handleSubmit}>
+					<input
+						autofocus
+						onChange={this.tellYoda}
+						type="text"
+						name="sentance"
+						id="sentance"
+						value={this.state.value}
+						placeholder="Speak, what say you would?"
+					/>
+				</form>
+			</>
 		);
 	}
 }
