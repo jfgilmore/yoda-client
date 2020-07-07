@@ -1,83 +1,63 @@
-import React from "react";
+import React, { useState } from "react";
 import "../styles/Form.css";
 
-class Form extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { yoda: "", value: "", translate: "", translated: "" };
-  }
+const Form = () => {
+  const [phrase, setPhrase] = useState("");
+  const [translation, setTranslation] = useState("");
+  const [translator, setTranslator] = useState("");
 
-  // async componentDidMount() {
-  // 	this.handleSubmit();
-  // }
-
-  handleSubmit = async (event) => {
+  const onSubmitPhrase = async (event) => {
     event.preventDefault();
-    if (event.target[0].value === "") {
+    if (phrase === undefined) {
       return;
     }
     try {
       const response = await fetch(
-        `https://api.funtranslations.com/translate/yoda.json?text=${event.target[0].value}`,
-        {
-          method: "GET",
-        }
+        `https://api.funtranslations.com/translate/yoda.json?text=${phrase}`
       );
       const data = await response.json();
       if (typeof data.error !== "undefined") {
-        throw data;
+        throw data.error.message;
       } else {
-        this.setState({ data: data, value: "" });
+        setTranslation(data.contents.translated);
+        setTranslator(data.contents.translation);
+        setPhrase("");
       }
     } catch (error) {
-      this.setState({
-        data: {
-          contents: {
-            translated: error.error.message,
-            translation: "The Server",
-          },
-          error: error,
-        },
-      });
+      setTranslation(error);
+      setTranslator("The Server");
     }
   };
 
-  tellYoda = (event) => {
-    this.setState({ value: event.target.value });
+  const onPhraseChange = (event) => {
+    setPhrase(event.target.value);
   };
 
-  render() {
-    const data = this.state?.data;
-    return (
-      <>
-        {data && (
-          <div>
-            <blockquote
-              className={
-                data.contents.translation === "yoda" ? "result" : "error"
-              }
-              cite={data.contents.translated}
-            >
-              {data.contents.translated}
-              <br />
-              <cite>- {data.contents.translation}</cite>
-            </blockquote>
-          </div>
-        )}
-        <form onSubmit={this.handleSubmit}>
-          <input
-            autoFocus
-            onChange={this.tellYoda}
-            type="text"
-            name="sentance"
-            id="sentance"
-            value={this.state.value}
-            placeholder="Speak, what say you would?"
-          />
-        </form>
-      </>
-    );
-  }
-}
+  return (
+    <>
+      <div>
+        <blockquote
+          className={translator === "yoda" ? "result" : "error"}
+          cite={translator}
+        >
+          {translation}
+          <br />
+          <cite>{translation && `- ${translator}`}</cite>
+        </blockquote>
+      </div>
+      <form onSubmit={onSubmitPhrase}>
+        <input
+          autoFocus
+          onChange={onPhraseChange}
+          type="text"
+          name="phrase"
+          id="phrase"
+          value={phrase}
+          placeholder="Speak, what say you would?"
+        />
+      </form>
+    </>
+  );
+};
 
 export default Form;
